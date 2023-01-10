@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(uuid())
+  username       String          @unique
+  password       String
+  fullname       String          @db.VarChar(255)
+  email          String          @unique
+  role           Role            @default(BASIC)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  writtenPosts   Post[]          @relation("writtenPosts")
+  favoritePosts  Post[]          @relation("favoritePosts")
+  userPreference UserPreference?
+  schoolId       String
+  School         School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([username, schoolId])
+  @@index([username, fullname, email])
+}
+
+model UserPreference {
+  id           String  @id @default(uuid())
+  emailUpdates Boolean
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String  @unique
+}
+
+model School {
+  id       String @id @default(uuid())
+  name     String @unique
+  students User[]
+}
+
+model Post {
+  id           String    @id @default(uuid())
+  title        String
+  description  String
+  detail       String
+  rating       Float
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt()
+  author       User      @relation("writtenPosts", fields: [authorId], references: [id], onDelete: Cascade)
+  authorId     String
+  favoritedBy  User?     @relation("favoritePosts", fields: [favoriteById], references: [id])
+  favoriteById String
+  category     Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId   String?
+}
+
+model Category {
+  id    String @id @default(uuid())
+  name  String
+  posts Post[]
+}
+
+enum Role {
+  BASIC
+  ADMIN
+}
